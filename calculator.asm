@@ -26,12 +26,12 @@ ADD_16_BY_16:
 		JMP END
 
 SUB_16_BY_16:
-		;HL = DE-HL
-		MOV A, E   	; A = E
-		SUB L   	; A = A-L, CY=BORROW
+		;HL = HL-DE
+		MOV A, L   	; A = L
+		SUB E   	; A = A-E, CY=BORROW
 		MOV L, A   	; L = A
-		MOV A, D   	; A = D
-		SBB H   	; A = A-H-CY
+		MOV A, H   	; A = H
+		SBB D   	; A = A-D-CY
 		MOV H, A   	; H = A
 		JMP END
 
@@ -59,7 +59,7 @@ DIV_16_BY_16:
 		SBB D						; A = H-D-CY, CY=BORROW
 		MOV H, A					; H = A
 		JC TEMP2_DIV_16_BY_16		; CAN NOT SUBTRACT ANYMORE, FINISH SUBROUTINE
-		INX B						; BC = BC+1
+		INX B						; BC++
 		JMP TEMP_DIV_16_BY_16		; SUBTRACT AGAIN
 	TEMP2_DIV_16_BY_16:
 		DAD D						; HL WAS SUBTRACTED 1 EXTRA TIME(THAT IS WHY BORROW = 1, AND YOU JUMPED HERE). SO, ADD DE ONCE TO GET HL=REMAINDER
