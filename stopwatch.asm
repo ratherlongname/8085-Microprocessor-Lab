@@ -1,0 +1,73 @@
+cpu "8085.tbl"
+hof "int8"
+
+org 9000H
+MVI A, 00H					;A=0
+MVI B, 00H					;B=0
+LXI H, 8504H				;HL=8840
+MVI M, 0CH					;[8840]=0C
+LXI H, 8505H				;HL=8841
+MVI M, 11H					;[8841]=11
+LXI H, 8506H				;HL=8842
+MVI M, 00H					;[8842]=00
+LXI H, 8507H				;HL=8843
+MVI M, 0CH					;[8843]=0C
+LXI H, 8508H
+MVI M, 2EH
+LXI H, 8509H
+MVI M, 00F3H
+LXI H, 8504H				;HL=8840
+CALL 0389H					;OUTPUT
+MVI A, 01H
+MVI B, 01H
+LXI H, 8508H
+CALL 0389H
+CALL 9103H					;DELAY
+CALL 9103H					;DELAY
+CALL 02BEH					;CLEAR
+MVI A, 00H					;A=0
+MVI B, 00H					;B=0
+MOV H, 00H					;H=D
+MOV L, 00H					;L=E
+; MINS_SET:					;
+SHLD 8FEFH				;CURAD
+MVI A, 00H				;
+; GOTO_NEXT_SECOND:			;
+STA 8FF1H				;CURDT
+CALL 0440H				;UPDAD
+CALL 044CH				;UPDDT
+MVI A,1BH
+SIM
+EI
+MVI A, 00H	
+CALL 9103H				;DELAY
+LDA 8FF1H				;CURDT
+ADI 01H					;A++
+DAA						;BCD(A)
+CPI 60H					;
+JNZ 90CDH	;GOTO_NEXT_SECOND
+LHLD 8FEFH				;CURAD
+MOV A, L				;
+ADI 01H					;
+DAA						;
+MOV L, A				;
+CPI 60H					;
+JNZ 90C8H			;MINS_SET
+MVI L, 00H				;
+MOV A, H				;
+ADI 01H					;
+DAA						;
+MOV H, A				;
+JMP 90C8H			;MINS_SET
+; DELAY:						;
+MVI C, 03H				;
+; LOOP_ON_C:					;
+LXI D, 0A685H			;
+; LOOP_ON_D:					;
+DCX D					;
+MOV A, D				;
+ORA E					;
+JNZ 9108H			;LOOP_ON_D
+DCR C					;
+JNZ 9105H			;LOOP_ON_C
+RET						;
