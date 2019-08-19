@@ -26,16 +26,19 @@ CALL 0389H
 CALL 9103H			;DELAY
 CALL 9103H			;DELAY
 CALL 02BEH			;CLEAR
-; Initialize to 00:00
+; Initialize to timer val at [8500H]
 MVI A, 00H			;A=0
 MVI B, 00H			;B=0
-MOV H, 00H			;H=D
-MOV L, 00H			;L=E
-; MINS_SET:
+LHLD 8500H			;HL = [8500H]
+MINS_SET:
 ; Write HL value to Addr. Display Mem Loc
+MOV A, L
+DAA
+MOV L, A
 SHLD 8FEFH			;CURAD
-MVI A, 00H			;
-; GOTO_NEXT_SECOND:
+MVI A, 59H			;
+GOTO_NEXT_SECOND:
+DAA
 ; Write A to Data Display Mem Loc
 STA 8FF1H			;CURDT
 ; Display values on both displays
@@ -46,44 +49,58 @@ MVI A,1BH
 SIM
 EI
 MVI A, 00H
-; Delay for 1s	
-CALL 9103H			;DELAY
+; Delay for 1sec
+CALL DELAY			;DELAY
 ; Load secs into A
 LDA 8FF1H			;CURDT
-; Increment second
-ADI 01H				;A++
-DAA				;BCD(A)
-CPI 60H				;
-; if secs < 60 then GOTO_NEXT_SECOND is complete
-JNZ 90CDH			;GOTO_NEXT_SECOND
-; else secs == 60 so need to increment mins
+; Decrement second
+SUI 01H				;A--
+;DAA				    ;BCD(A)
+CPI FFH				;
+; if secs >= 00 then GOTO_NEXT_SECOND is complete
+JNZ GOTO_NEXT_SECOND    ;GOTO_NEXT_SECOND
+; else secs < 00 so need to decrement mins
 ; Load hours mins into HL
 LHLD 8FEFH			;CURAD
-; Increment mins
+; Decrement mins
 MOV A, L			;
-ADI 01H				;
-DAA				;
+SUI 01H				;
+;DAA				;
 MOV L, A			;
-CPI 60H				;
-; if mins < 60 then GOTO_NEXT_SECOND is complete but mins need to be written to CURAD
-JNZ 90C8H			;MINS_SET
-; else mins == 60 so need to increment hours
-MVI L, 00H			;
+CPI FFH				;
+; if mins >= 00 then GOTO_NEXT_SECOND is complete but mins need to be written to CURAD
+JNZ MINS_SET			;MINS_SET
+; else mins < 00 so need to decrement hours
+MVI L, 59H			;
 MOV A, H			;
-ADI 01H				;
-DAA				;
+CPI 00H
+; if hours == 00 then stop timer
+JZ STOP_TIMER
+; else decrement hours
+SUI 01H				;
+DAA			       	;
 MOV H, A			;
 ; mins need to be written to CURAD
-JMP 90C8H			;MINS_SET
-; DELAY:			;
+JMP MINS_SET	    ;MINS_SET
+DELAY:			    ;
 MVI C, 03H			;
-; LOOP_ON_C:			;
-LXI D, 0A685H			;
-; LOOP_ON_D:			;
+LOOP_ON_C:			;
+LXI D, 0A685H		;
+LOOP_ON_D:			;
 DCX D				;
 MOV A, D			;
 ORA E				;
-JNZ 9108H			;LOOP_ON_D
+JNZ LOOP_ON_D
 DCR C				;
-JNZ 9105H			;LOOP_ON_C
-RST 5
+JNZ LOOP_ON_C
+RET
+STOP_TIMER:
+MVI L, 00H
+SHLD 8FEFH			;CURAD
+MVI A, 00H			;
+STA 8FF1H			;CURDT
+; Display values on both displays
+CALL 0440H			;UPDAD
+CALL 044CH			;UPDDT
+CALL DELAY
+RST 5.5
