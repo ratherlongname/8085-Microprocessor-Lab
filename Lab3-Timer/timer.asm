@@ -104,3 +104,31 @@ CALL 0440H			;UPDAD
 CALL 044CH			;UPDDT
 CALL DELAY
 RST 5.5
+
+org 9200H
+LDA 8600H           ; Play / pause status is stored at [8600H]
+CPI 00H
+; if [8600H] != 00 then it was paused and needs to be played.
+JNZ STOP_PAUSE
+; else it was playing and needs to be paused
+MVI A, 01H          ; update status at [8600H]
+STA 8600H
+JMP INF_DELAY       ; run infinite delay to pause
+
+STOP_PAUSE:
+MVI A, 00H          ; update status at [8600H]
+STA 8600H
+RET                 ; return to play timer
+
+INF_DELAY:
+MVI C, 03H			;
+LOOP_ON_C:			;
+LXI D, 0A685H		;
+LOOP_ON_D:			;
+DCX D				;
+MOV A, D			;
+ORA E				;
+JNZ LOOP_ON_D
+DCR C				;
+JNZ LOOP_ON_C
+JMP INF_DELAY
